@@ -21,7 +21,7 @@ class LocalActor extends Actor{
       user : The actor is user defined
       remote : name of the actor, passed as parameter to system.actorOf call
      */
-    val remoteActor = context.actorSelection("akka.tcp://ClusterSystem@127.0.0.1:4579")
+    val remoteActor = context.actorSelection("akka.tcp://ClusterSystem@127.0.0.1:4579/system/receptionist")
     println("That 's remote:" + remoteActor)
     remoteActor ! "TFM"
   }
