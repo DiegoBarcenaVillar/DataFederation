@@ -3,6 +3,9 @@ package sample.cluster.simple
 import com.typesafe.config.ConfigFactory
 import akka.actor.ActorSystem
 import akka.actor.Props
+import akka.cluster.client.ClusterClientReceptionist
+
+
 
 object SimpleClusterApp {
   
@@ -35,7 +38,11 @@ object SimpleClusterApp {
       // Create an Akka system
       val system = ActorSystem("ClusterSystem", config)
       // Create an actor that handles cluster domain events
-      system.actorOf(Props[SimpleClusterListener], name = "clusterListener")
+      val actor = system.actorOf(Props[SimpleClusterListener], name = "clusterListener" + port)
+
+      if(port.equals("4579"))
+        ClusterClientReceptionist(system).registerService(actor)
+
     }
   }
 

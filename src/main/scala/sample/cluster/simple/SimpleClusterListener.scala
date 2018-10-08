@@ -26,9 +26,8 @@ class SimpleClusterListener extends Actor with ActorLogging {
       log.info("Member is Removed: {} after {}",
         member.address, previousStatus)
     case msg:String =>
-      log.info("***********************" + msg)
-
+      log.info(msg)
     case _ =>
-      log.info("+++++++++++++")
+
   }
 }
