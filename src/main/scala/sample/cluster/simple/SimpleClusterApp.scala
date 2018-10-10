@@ -14,7 +14,7 @@ object SimpleClusterApp {
 
 
     if (args.isEmpty)
-      startup(Seq("2551", "2552", "4579"))
+      startup(Seq("2551", "2552", "5000"))
     else
       startup(args)
   }
@@ -38,9 +38,9 @@ object SimpleClusterApp {
       // Create an Akka system
       val system = ActorSystem("ClusterSystem", config)
       // Create an actor that handles cluster domain events
-      val actor = system.actorOf(Props[SimpleClusterListener], name = "clusterListener" + port)
+      val actor = system.actorOf(Props[SimpleClusterListener], name = "clusterListener")
 
-      if(port.equals("4579"))
+      if(port.equals("5000"))
         ClusterClientReceptionist(system).registerService(actor)
 
     }

@@ -29,5 +29,6 @@ class SimpleClusterListener extends Actor with ActorLogging {
       log.info(msg)
     case _ =>
 
+
   }
 }
