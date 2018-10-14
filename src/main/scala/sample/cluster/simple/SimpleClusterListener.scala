@@ -27,8 +27,7 @@ class SimpleClusterListener extends Actor with ActorLogging {
         member.address, previousStatus)
     case msg:String =>
       log.info(msg)
+      sender ! "PONG"
     case _ =>
-
-
   }
 }
