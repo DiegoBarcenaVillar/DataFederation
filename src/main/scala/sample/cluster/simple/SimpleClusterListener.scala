@@ -4,10 +4,20 @@ import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
 import akka.actor.ActorLogging
 import akka.actor.Actor
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.DataFrame
+
 
 class SimpleClusterListener extends Actor with ActorLogging {
 
+
   val cluster = Cluster(context.system)
+
+  val sparkSession = SparkSession.builder
+    .master("local")
+    .appName("datafederation session")
+    .getOrCreate()
+
 
   // subscribe to cluster changes, re-subscribe when restart 
   override def preStart(): Unit = {
@@ -17,7 +27,7 @@ class SimpleClusterListener extends Actor with ActorLogging {
   override def postStop(): Unit = cluster.unsubscribe(self)
 
   def receive = {
-    
+
     case MemberUp(member) =>
       log.info("Member is Up: {}", member.address)
     case UnreachableMember(member) =>
@@ -27,7 +37,12 @@ class SimpleClusterListener extends Actor with ActorLogging {
         member.address, previousStatus)
     case msg:String =>
       log.info(msg)
-      sender ! "PONG"
+      sender ! processString(msg)
     case _ =>
+  }
+
+  def processString (sqlText:String ) :  String /*DataFrame*/ = {
+    //sparkSession.sql(sqlText)
+    "OK"
   }
 }
