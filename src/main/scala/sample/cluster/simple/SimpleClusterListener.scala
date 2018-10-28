@@ -6,6 +6,11 @@ import akka.actor.ActorLogging
 import akka.actor.Actor
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame
+//import scala.util.parsing.json.JSONObject
+//import org.apache.spark.sql._
+
+
+
 
 
 class SimpleClusterListener extends Actor with ActorLogging {
@@ -17,6 +22,8 @@ class SimpleClusterListener extends Actor with ActorLogging {
     .master("local")
     .appName("datafederation session")
     .getOrCreate()
+
+
 
 
   // subscribe to cluster changes, re-subscribe when restart 
@@ -37,12 +44,32 @@ class SimpleClusterListener extends Actor with ActorLogging {
         member.address, previousStatus)
     case msg:String =>
       log.info(msg)
-      sender ! processString(msg)
+      sender ! processString(msg).toJSON.collect().mkString(";")
     case _ =>
   }
 
-  def processString (sqlText:String ) :  String /*DataFrame*/ = {
-    //sparkSession.sql(sqlText)
-    "OK"
+  def processString (sqlText:String ) :  /*String*/ DataFrame = {
+
+    try {
+      //parkSession.sql(sqlText)
+      dummyDataFrame
+    }catch {
+      case ex: org.apache.spark.sql.catalyst.parser.ParseException => {
+        ex.printStackTrace()
+        null
+      }
+    }
   }
+
+  def dummyDataFrame () :  DataFrame = {
+
+    import sparkSession.implicits._
+
+    val df = Seq((1,2,3),(11,12,13)).toDF("A", "B", "C")
+    df
+
+  }
+
+
+
 }
