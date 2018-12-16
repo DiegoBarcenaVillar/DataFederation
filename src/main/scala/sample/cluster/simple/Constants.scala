@@ -11,8 +11,4 @@ class Constants {
   val columnsLabel = "COLUMNS:"
   val tableLabelCreate = "AND NAME:"
   val tableLabelDrop = "DROP TABLE WITH NAME:"
-  //val tableLabelCreate = "CREATE TABLE"
-  //val tableLabelDelete = "DROP TABLE"
-
-
 }

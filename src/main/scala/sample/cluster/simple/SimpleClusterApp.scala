@@ -14,7 +14,6 @@ object SimpleClusterApp {
     val constants : Constants = new Constants()
 
     if (args.isEmpty)
-      //startup(Seq("2551", "2552", "5000"))
       startup(constants.receptionPorts)
     else
       startup(args)
@@ -32,15 +31,9 @@ object SimpleClusterApp {
       val system = ActorSystem("ClusterSystem", config)
 
       // Create an actor that handles cluster domain events
-      //val actor = system.actorOf(Props[SimpleClusterListener], name = "clusterListener")
-
       val actor = system.actorOf(Props(classOf[SimpleClusterListener], port), name = "clusterListener")
 
-//      if(port.equals("5000"))
-//        ClusterClientReceptionist(system).registerService(actor)
-
       ClusterClientReceptionist(system).registerService(actor)
-
     }
   }
 }

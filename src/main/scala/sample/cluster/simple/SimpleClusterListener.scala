@@ -2,7 +2,6 @@ package sample.cluster.simple
 
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
-import akka.cluster.Member
 import akka.actor.ActorLogging
 import akka.actor.Actor
 import org.apache.spark.sql.SparkSession
@@ -34,7 +33,6 @@ class SimpleClusterListener(port : String) extends Actor with ActorLogging {
 
   val columns = parquetFileDF.dtypes
 
-
   var zookeeperListener : Executor = null
   var zookeeperModifier : ZookeeperModifier = null
   var mapOfCreatedStrings : mutable.HashMap[String, String] = new mutable.HashMap[String, String]()
@@ -63,7 +61,6 @@ class SimpleClusterListener(port : String) extends Actor with ActorLogging {
 
     case MemberUp(member) =>
       log.info("Member is Up: {}", member.address)
-      //this.member =  member
     case UnreachableMember(member) =>
       log.info("Member detected as unreachable: {}", member)
     case MemberRemoved(member, previousStatus) =>
@@ -77,11 +74,7 @@ class SimpleClusterListener(port : String) extends Actor with ActorLogging {
 
   def processString (sqlText : String ) :  Object = {
     try {
-
-      //System.out.println("Addres Serving: " + member.address)
-      //System.out.println("Port Serving: " + runningPort)
       print("SimpleClusterListener processString", runningPort, "beginning")
-
 
       if (sqlText.startsWith("GET COLUMNS")) {
         return getColumns(sqlText)
@@ -99,9 +92,6 @@ class SimpleClusterListener(port : String) extends Actor with ActorLogging {
       } else{
         return Array("The Requested Operation is not Available in the System").toJson
       }
-
-      //sparkSession.sql(sqlText)
-      //dummyDataFrame
     }catch {
       case ex: org.apache.spark.sql.catalyst.parser.ParseException => {
         ex.printStackTrace()
@@ -246,30 +236,24 @@ class SimpleClusterListener(port : String) extends Actor with ActorLogging {
     this.columns.toJson
   }
 
-  def dummyQuerySentence(clientRequest : String): JsValue = {
-
-    var parquetFileDF = spark.read.load("C:\\Users\\diegobarcena\\Documents\\U-tad\\TFM\\Datos_II\\airlines_parquet\\")
-
-    System.out.println(parquetFileDF.show(10) + this.runningPort)
-
-    val year = parquetFileDF.select("year", "flight_num")
-
-    year.createOrReplaceTempView("years")
-
-    val years = spark.sql("SELECT * FROM years LIMIT 2")
-
-    System.out.println(years.show + this.runningPort)
-
-    val arrayStr = years.toJSON.collect().toJson
-
-    arrayStr
-
-  }
-
-//  def dummyDataFrame () :  DataFrame = {
-//    import sparkSession.implicits._
-//    val df = Seq((1,2,3),(11,12,13)).toDF("A", "B", "C")
-//    df
+//  def dummyQuerySentence(clientRequest : String): JsValue = {
+//
+//    var parquetFileDF = spark.read.load("C:\\Users\\diegobarcena\\Documents\\U-tad\\TFM\\Datos_II\\airlines_parquet\\")
+//
+//    System.out.println(parquetFileDF.show(10) + this.runningPort)
+//
+//    val year = parquetFileDF.select("year", "flight_num")
+//
+//    year.createOrReplaceTempView("years")
+//
+//    val years = spark.sql("SELECT * FROM years LIMIT 2")
+//
+//    System.out.println(years.show + this.runningPort)
+//
+//    val arrayStr = years.toJSON.collect().toJson
+//
+//    arrayStr
+//
 //  }
 
   def print(method: String, port: String, trace: String): Unit = {
