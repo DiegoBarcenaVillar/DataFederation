@@ -1,9 +1,10 @@
-package sample.cluster.simple;
+package tfm.cluster;
 
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
+import tfm.common.Constants;
 
 import java.util.List;
 
@@ -13,15 +14,12 @@ public class DataMonitor implements Watcher, ZooDefs.Ids {
         private Watcher chainedWatcher;
         private boolean dead;
         private DataMonitorListener listener;
-        private byte prevData[];
         private List<String> tableDictionary;
         private String runningPort;
-        private SimpleClusterListener actorRef;
-
-        private Constants constants  = new Constants();
+        private ClusterListener actorRef;
 
         public DataMonitor(String znode, Watcher chainedWatcher,
-                           DataMonitorListener listener, String runningPort, SimpleClusterListener actorRef) {
+                           DataMonitorListener listener, String runningPort, ClusterListener actorRef) {
 
             print("DataMonitor Constructor", runningPort, "beginning");
 
@@ -53,11 +51,10 @@ public class DataMonitor implements Watcher, ZooDefs.Ids {
         }
 
         public void startingUp(){
-            // Get things started by checking if the node exists. We are going
-            // to be completely event driven
             print("DataMonitor startingUp", runningPort, "beginning");
+
             try {
-                this.zk = new ZooKeeper(constants.hostPort(), constants.sessionTimeOut(), this);
+                this.zk = new ZooKeeper(Constants.hostPort(), Constants.sessionTimeOut(), this);
             }catch(java.io.IOException ioEx){
                 ioEx.printStackTrace();
             }
@@ -71,9 +68,11 @@ public class DataMonitor implements Watcher, ZooDefs.Ids {
                 tableDictionary = this.zk.getChildren(znode, this);
 
                 print("DataMonitor startingUp", runningPort, "%%List of Children-Tables at Start Up Begin%%%%");
+
                 for(String table : tableDictionary) {
                     print("DataMonitor startingUp", runningPort, "%%Existing at Start UP%%" + table + "%%");
                     print("DataMonitor startingUp", runningPort, "%%Deleted at Start UP%%" + table + "%%");
+
                     this.zk.exists(znode.concat("/").concat(table), this);
                     this.zk.getData(znode.concat("/").concat(table), this, null);
                 }
@@ -94,7 +93,7 @@ public class DataMonitor implements Watcher, ZooDefs.Ids {
             List<String> tableDictionary = null;
 
             try {
-                zkLocal = new ZooKeeper(constants.hostPort(), constants.sessionTimeOut(), this);
+                zkLocal = new ZooKeeper(Constants.hostPort(), Constants.sessionTimeOut(), this);
                 tableDictionary = zkLocal.getChildren(znode, false);
 
                 print("DataMonitor zookepperTableDeletion", runningPort, "Tables to be deleted "  + tableDictionary.size());
@@ -135,13 +134,8 @@ public class DataMonitor implements Watcher, ZooDefs.Ids {
                     // connection has changed
                     switch (event.getState()) {
                         case SyncConnected:
-                            // In this particular example we don't need to do anything
-                            // here - watches are automatically re-registered with
-                            // server and any watches triggered while the client was
-                            // disconnected will be delivered (in order of course)
                             break;
                         case Expired:
-                            // It's all over
                             dead = true;
                             listener.closing(Code.SessionExpired);
                             break;
@@ -165,18 +159,26 @@ public class DataMonitor implements Watcher, ZooDefs.Ids {
 
                         print("DataMonitor process", runningPort, "newTable: " + tableName);
 
+
                         createString = new String(this.zk.getData(event.getPath().concat("/").concat(tableName)
                                         , this, new Stat()));
-
-                        actorRef.updateSpark(createString, AllowedActions.Create());
+                        try{
+                            if(createString.startsWith(Constants.tableLabelCreateStart()))
+                                actorRef.updateSpark(createString, AllowedActions.Create());
+                            else
+                                actorRef.updateSpark(createString, AllowedActions.CreateSql());
+                        }catch(Exception e){
+                        }
 
                     } else if (newTableDictionary.size() < tableDictionary.size()) {
                         tableName = this.tableDictionary.stream()
                                     .filter(t -> !newTableDictionary.contains(t)).findFirst().get();
 
-                        createString = constants.tableLabelDrop().concat(" ").concat(tableName);
-
-                        actorRef.updateSpark(createString, AllowedActions.Drop());
+                        createString = Constants.tableLabelDropSql().concat(" TABLE IF EXISTS ").concat(tableName);
+                        try {
+                            actorRef.updateSpark(createString, AllowedActions.DropSql());
+                        }catch(Exception e){
+                        }
                     }
 
                     this.tableDictionary = newTableDictionary;
@@ -189,7 +191,13 @@ public class DataMonitor implements Watcher, ZooDefs.Ids {
                     createString = new String(this.zk.getData(event.getPath().concat("/").concat(tableName)
                                 , this, new Stat()));
 
-                    actorRef.updateSpark(createString, AllowedActions.Create());
+                    try{
+                        if(createString.startsWith(Constants.tableLabelCreateStart()))
+                            actorRef.updateSpark(createString, AllowedActions.Create());
+                        else
+                            actorRef.updateSpark(createString, AllowedActions.CreateSql());
+                    }catch(Exception e){
+                    }
                 } else {
                     if (path != null && path.equals(znode)) {
                         // Something has changed on the node, let's find out
@@ -213,7 +221,12 @@ public class DataMonitor implements Watcher, ZooDefs.Ids {
         }
 
         public List<String> getTablesDictionary() {
-            return tableDictionary;
+            try{
+                return this.zk.getChildren(znode, true);
+            }catch(KeeperException | InterruptedException ex){
+                ex.printStackTrace();
+                return null;
+            }
         }
 
         public void print(String method, String port, String trace){

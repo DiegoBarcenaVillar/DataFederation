@@ -1,20 +1,19 @@
-package sample.cluster.simple
+package tfm.cluster
 
 import com.typesafe.config.ConfigFactory
 import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.cluster.client.ClusterClientReceptionist
+import tfm.common.Constants
 
-object SimpleClusterApp {
+object ClusterApp {
   
   def main(args: Array[String]): Unit = {
 
     System.setProperty("hadoop.home.dir", "C:\\winutils_hadoop2.6.0\\");
 
-    val constants : Constants = new Constants()
-
     if (args.isEmpty)
-      startup(constants.receptionPorts)
+      startup(Constants.receptionPorts)
     else
       startup(args)
   }
@@ -31,7 +30,7 @@ object SimpleClusterApp {
       val system = ActorSystem("ClusterSystem", config)
 
       // Create an actor that handles cluster domain events
-      val actor = system.actorOf(Props(classOf[SimpleClusterListener], port), name = "clusterListener")
+      val actor = system.actorOf(Props(classOf[ClusterListener], port), name = "clusterListener")
 
       ClusterClientReceptionist(system).registerService(actor)
     }
